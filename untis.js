@@ -1,85 +1,45 @@
-const crypto = require("crypto");
+/*
+
+The api calls were reverse-engineered from the WebUntis Api Wrapper by SchoolUtils (https://github.com/SchoolUtils/WebUntis)
+I am not in any way affiliated with Untis GmbH.
+
+(c) Tobias Kendlbacher 2022 - MIT License
+
+*/
+
 const secrets = require("./secrets");
+const fs = require("fs");
 
-function intToBytes(num) {
-	var bytes = [];
 
-	for(var i=7 ; i>=0 ; --i) {
-		bytes[i] = num & (255);
-		num = num >> 8;
-	}
-
-	return bytes;
-}
-
-function hexToBytes(hex) {
-	var bytes = [];
-	for(var c = 0, C = hex.length; c < C; c += 2) {
-		bytes.push(parseInt(hex.substr(c, 2), 16));
-	}
-	return bytes;
-}
-
-async function generateTOTP(secret, epoch = Date.now(), step = 30) {
-    let counter = Math.floor(epoch / step / 1000);
-
-    var p = 6;
-    var b = intToBytes(counter);
-
-    var hmac = crypto.createHmac('sha1', Buffer.from(secret));
-
-    var digest = hmac.update(Buffer.from(b)).digest('hex');
-
-    var h = hexToBytes(digest);
-
-    // Truncate
-    var offset = h[19] & 0xf;
-    var v = (h[offset] & 0x7f) << 24 |
-        (h[offset + 1] & 0xff) << 16 |
-        (h[offset + 2] & 0xff) << 8 |
-        (h[offset + 3] & 0xff);
-
-    v = (v % 1000000) + '';
-
-    return Array(7 - v.length).join('0') + v;
-
-}
-
-let loginInformation = null;
 /**
 * @param {string} school
 * @param {string} username
-* @param {string} secret
+* @param {string} password
 * @param {string} baseurl
 */
-async function login(school, username, secret, baseurl) {
-    const token = await generateTOTP(secret);
-    const time = new Date().getTime();
-
+async function login(school, username, password, baseurl) {
     const url = `${baseurl}/WebUntis/jsonrpc_intern.do?m=getUserData2017&school=${school}&v=i2.2`;
 
     console.log(`${baseurl}/WebUntis/jsonrpc_intern.do?m=getUserData2017&school=${school}&v=i2.2`);
 
-    const response = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({
-            id: 'identification',
-            method: 'getUserData2017',
-            params: [
-                {
-                    auth: {
-                        clientTime: time,
-                        user: username,
-                        otp: token,
-                    },
-                },
-            ],
-            jsonrpc: '2.0',
-        }),
-        credentials: "include"
+    let response = await fetch(baseurl + "/WebUntis/jsonrpc.do?school=" + school, {
+        "credentials": "include",
+        method: "POST",
+        "body": JSON.stringify({
+            "id": "ident",
+            "method": "authenticate",
+            "params": {
+                "user": username,
+                "password": password,
+                "client": "ident"
+            },
+            "jsonrpc": "2.0"
+        })
     });
 
     let res = await response.json()
+
+    console.log(res);
 
     if (response.data && response.data.error)
         throw new Error(response.data.error.message);
@@ -107,29 +67,10 @@ async function login(school, username, secret, baseurl) {
 
     console.log(cookietext);
 
-    
-    const config = await (await fetch(`${baseurl}/WebUntis/api/daytimetable/config`, { headers: { cookie: cookietext }})).text();
-    console.log(config);
-    let untis;
-    eval(config.match(/untis[^.]= \{.+?\};/gs)[0]);
-    console.log(untis);
+    const config = await (await fetch(`${baseurl}/WebUntis/api/app/config`, { headers: { cookie: cookietext } })).json();
+
+    // write variable to file
+    fs.writeFileSync("untis.json", JSON.stringify(config, null, 4));
 }
 
-login(secrets.UNTIS_SCHOOL, secrets.UNTIS_USER, secrets.UNTIS_SECRET, secrets.UNTIS_URL);
-
-/* require('dotenv').config();
-
-const untis = new WebUntisSecretAuth(process.env.UNTIS_SCHOOL, process.env.UNTIS_USER, process.env.UNTIS_SECRET, process.env.UNTIS_URL, 'nope', Authenticator);
-
-async function main() {
-    await untis.login();
-    //const classes = await untis.getExamsForRange(new Date(), new Date(new Date().setMonth(new Date().getMonth() + 2)));
-    const student = await untis.getTimegrid();
-    console.log(JSON.stringify(student, null, 2))
-
-
-
-    await untis.logout();
-}
-
-main(); */
+login(secrets.UNTIS_SCHOOL, secrets.UNTIS_USER, secrets.UNTIS_PASSWORD, secrets.UNTIS_URL);
