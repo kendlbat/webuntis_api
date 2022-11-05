@@ -1,6 +1,6 @@
 # WebUntis API
-## A small project for API calls to WebUntis
-<br>
+> A small project for API calls to WebUntis  
+  
 This project aims to get data from the WebUntis API.  
 It has ABSOLUTELY NO dependencies.  
 <br><br>
