@@ -1,3 +1,3 @@
 # TODO
 ### Code style
- - Refactor `untis.ts` so it is a class instead of loose functions
+ - Refactor `untis.js` so it is a class instead of loose functions

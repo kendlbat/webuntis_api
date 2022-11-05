@@ -9,19 +9,19 @@ I am not in any way affiliated with Untis GmbH.
 
 const secrets = require("./secrets");
 
-const untis_id: string | number = "ident";
+const untis_id = "ident";
 
-let logged_in: boolean = false;
-let untis_config: object | null;
+let logged_in = false;
+let untis_config;
 
-let session_cookies: string | undefined;
+let session_cookies;
 
 /**
  * 
  * @param {Date} date 
  * @returns {string}
  */
-function convertToUntisDate(date: Date): string {
+function convertToUntisDate(date) {
     return (
         date.getFullYear().toString() +
         (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1).toString() +
@@ -36,12 +36,11 @@ function convertToUntisDate(date: Date): string {
 * @param {string} password
 * @param {string} baseurl
 */
-async function login(school: string = secrets.UNTIS_SCHOOL, username: string = secrets.UNTIS_USER, password: string = secrets.UNTIS_PASSWORD, baseurl: string = secrets.UNTIS_URL) {
+async function login(school = secrets.UNTIS_SCHOOL, username = secrets.UNTIS_USER, password = secrets.UNTIS_PASSWORD, baseurl = secrets.UNTIS_URL) {
     if (logged_in)
         console.warn("Call to login even though already logged in");
 
-    let response: Response = await fetch(baseurl + "/WebUntis/jsonrpc.do?school=" + school, {
-        "credentials": "include",
+    let response = await fetch(baseurl + "/WebUntis/jsonrpc.do?school=" + school, {
         method: "POST",
         "body": JSON.stringify({
             "id": untis_id,
@@ -62,11 +61,11 @@ async function login(school: string = secrets.UNTIS_SCHOOL, username: string = s
     if (res.data && res.data.error)
         throw new Error(res.data.error.message);
 
-    let rheaders: {};
+    let rheaders;
 
     if (response?.headers != null) {
         rheaders = response.headers
-            .get("set-cookie")!
+            .get("set-cookie")
             .split(";")
             .reduce((prev, curr) => {
                 let kv = curr
@@ -82,13 +81,13 @@ async function login(school: string = secrets.UNTIS_SCHOOL, username: string = s
 
     // Convert the response headers from an unusable string worm to a dict
 
-    let cookies: string[] = [];
+    let cookies = [];
     cookies.push(`JSESSIONID=${rheaders["JSESSIONID"]}`);
     cookies.push('schoolname=\"_' + Buffer.from(school).toString("base64") + "\"");
 
     session_cookies = cookies.join(";");
 
-    const config: {} = await (await fetch(`${baseurl}/WebUntis/api/app/config`, { headers: { cookie: session_cookies } })).json();
+    const config = await (await fetch(`${baseurl}/WebUntis/api/app/config`, { headers: { cookie: session_cookies } })).json();
 
     // write variable to file
     // fs.writeFileSync("config_nogit.json", JSON.stringify(config, null, 4));
@@ -101,19 +100,23 @@ async function login(school: string = secrets.UNTIS_SCHOOL, username: string = s
  * Logs out of the current session
  * @param {string} school The school name to pass to the api
  */
-async function logout(school = secrets.UNTIS_SCHOOL, baseurl: string = secrets.UNTIS_URL) {
+async function logout(school = secrets.UNTIS_SCHOOL, baseurl = secrets.UNTIS_URL) {
     if (!logged_in)
         console.warn("Call to logout even though not logged in");
+    if (!session_cookies)
+        throw new Error("Not logged in");
 
     await fetch(`${baseurl}/WebUntis/jsonrpc.do?school=${school}`, {
-        "credentials": "include",
         method: "POST",
         "body": JSON.stringify({
             "id": untis_id,
             "method": "logout",
             "params": {},
             "jsonrpc": "2.0"
-        })
+        }),
+        headers: {
+            cookie: session_cookies
+        }
     });
 
     logged_in = false;
@@ -126,17 +129,18 @@ async function logout(school = secrets.UNTIS_SCHOOL, baseurl: string = secrets.U
  * @param {Date} startDate 
  * @param {Date | null} endDate 
  * @param {string} baseurl Defaults to {@link secrets.UNTIS_URL}
+ * @param {string} cookies
  * 
  * @returns {object}
  */
-async function getExamsBetween(startDate: Date, endDate: Date | null = null, baseurl: string = secrets.UNTIS_URL, cookies: string | undefined = session_cookies): Promise<object> {
+async function getExamsBetween(startDate, endDate = null, baseurl = secrets.UNTIS_URL, cookies = session_cookies) {
     if (!session_cookies)
         throw new Error("Not logged in");
 
     return await (
         await fetch(
             encodeURI(
-                `${baseurl}/WebUntis/api/exams?startDate=${convertToUntisDate(startDate)}${endDate == null ? "&endDate=" + convertToUntisDate(endDate!) : ""}`
+                `${baseurl}/WebUntis/api/exams?startDate=${convertToUntisDate(startDate)}${endDate == null ? "&endDate=" + convertToUntisDate(endDate) : ""}`
             ),
             {
                 headers: {
