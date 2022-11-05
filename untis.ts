@@ -150,7 +150,7 @@ async function getExamsBetween(startDate: Date, endDate: Date | null = null, bas
 async function main() {
     await login();
     console.log(JSON.stringify(await getExamsBetween(new Date(), new Date(new Date().setMonth(11))), null, 2));
-    // logout(secrets.UNTIS_SCHOOL);
+    logout(secrets.UNTIS_SCHOOL);
 }
 
 main()
