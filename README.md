@@ -15,4 +15,8 @@ module.exports: object = {
     UNTIS_PASSWORD: "Pa$$word"
 };
 ```  
+  
+Please note that I am in no way affiliated with Untis GmbH.  
+I hold no responsibility for misuse of this projekt.[^mitlicense]
 
+[^mitlicense]: As specified in the `MIT License`
