@@ -117,6 +117,7 @@ async function logout(school = secrets.UNTIS_SCHOOL, baseurl: string = secrets.U
     });
 
     logged_in = false;
+    session_cookies = undefined;  // Clear session cookies, as they are no longer valid
 }
 
 /**
