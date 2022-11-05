@@ -6,7 +6,7 @@ It has ABSOLUTELY NO dependencies.
 <br><br>
 
 ### Contributing
-If you want to contribute to this project, please provide your own secrets.ts (only on your local machine) in secrets.ts:  
+If you want to contribute to this project, please provide your own secrets.ts (only on your local machine) in `secrets.ts`:  
 ```ts
 module.exports: object = {
     UNTIS_SCHOOL: "school_name",
