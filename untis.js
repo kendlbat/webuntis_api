@@ -30,6 +30,17 @@ function convertToUntisDate(date) {
 }
 
 /**
+ * 
+ * @param {Date} date
+ * @returns {Date} 
+ */
+function getNextMonday(date) {
+    let day = date.getDay();
+    let diff = date.getDate() - day + (day == 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+}
+
+/**
 * Will use {@link secrets} as default
 * @param {string} school
 * @param {string} username
@@ -151,10 +162,42 @@ async function getExamsBetween(startDate, endDate = null, baseurl = secrets.UNTI
     ).json();
 }
 
+async function getWeeklyTimetable(date, baseurl = secrets.UNTIS_URL, cookies = session_cookies) {
+    if (!session_cookies)
+        throw new Error("Not logged in");
+    
+    return await (
+        await fetch(
+            encodeURI(
+                `${baseurl}/WebUntis/api/public/timetable/weekly/data?elementType=5&elementId=5551&date=${date.toISOString().split("T")[0]}&formatId=3`
+            ),
+            {
+                headers: {
+                    cookie: session_cookies
+                }
+            }
+        )
+    ).json();
+}
+
 async function main() {
     await login();
-    console.log(JSON.stringify(await getExamsBetween(new Date(), new Date(new Date().setMonth(11))), null, 2));
+    // console.log(JSON.stringify(await getExamsBetween(new Date(), new Date(new Date().setMonth(11))), null, 2));
+    // console.log(JSON.stringify(await getWeeklyTimetable(new Date()), null, 2));
     logout(secrets.UNTIS_SCHOOL);
 }
 
-main()
+if (require.main === module) {
+    main();
+}
+
+module.exports = {
+    login,
+    logout,
+    getExamsBetween,
+    getWeeklyTimetable,
+    util: {
+        getNextMonday,
+        convertToUntisDate
+    }
+}
