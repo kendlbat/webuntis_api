@@ -162,6 +162,29 @@ async function getExamsBetween(startDate, endDate = null, baseurl = secrets.UNTI
     ).json();
 }
 
+/**
+ * @param {Date} date
+ * @returns {string}
+ */
+async function getWeeklyTimetableICAL(date, baseurl = secrets.UNTIS_URL, cookies = session_cookies) {
+    // https://asopo.webuntis.com/WebUntis/Ical.do?elemType=5&elemId=5551&rpt_sd=2023-03-20
+    if (!session_cookies)
+        throw new Error("Not logged in");
+
+    return await (
+        await fetch(
+            encodeURI(
+                `${baseurl}/WebUntis/Ical.do?elemType=5&elemId=5551&rpt_sd=${date.toISOString().split("T")[0]}`
+            ),
+            {
+                headers: {
+                    cookie: session_cookies
+                }
+            }
+        )
+    ).text();
+}
+
 async function getWeeklyTimetable(date, baseurl = secrets.UNTIS_URL, cookies = session_cookies) {
     if (!session_cookies)
         throw new Error("Not logged in");
@@ -196,6 +219,7 @@ module.exports = {
     logout,
     getExamsBetween,
     getWeeklyTimetable,
+    getWeeklyTimetableICAL,
     util: {
         getNextMonday,
         convertToUntisDate
